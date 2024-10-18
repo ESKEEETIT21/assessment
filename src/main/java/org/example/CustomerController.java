@@ -7,8 +7,6 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.HashMap;
 
 
@@ -18,7 +16,6 @@ public class CustomerController {
         Gson gson = new Gson();
         String jsonFileAsAString = getJsonFile();
         Dataset dataset = gson.fromJson(jsonFileAsAString, Dataset.class);
-        //System.out.println(dataset.toString());
 
         for (Event event : dataset.events()) {
             if (!customers.containsKey(event.customerId())) {
