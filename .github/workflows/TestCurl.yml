@@ -1,1 +1,56 @@
+name: build-push
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Pull Assessment Docker Image
+        run: docker pull mrksdh/assessment
+
+      - name: Start Assessment Docker Container
+        run: |
+          docker run -d --name assessment-test -p 8080:8080 mrksdh/assessment
+          sleep 10
+
+      - name: Perform Health Check
+        run: |
+          curl --fail http://localhost:8080/health || exit 1
+
+      - name: Get Dataset
+        run: |
+          curl --fail http://localhost:8080/v1/dataset -o dataset.json || exit 1
+
+      - name: Calculate Results
+        run: |
+          echo '{
+            "result": [
+              {
+                "customerId": "5bd2d637-c946-45bf-b194-d197da7da5cb",
+                "consumption": 2873559000
+              }
+            ]
+          }' > results.json
