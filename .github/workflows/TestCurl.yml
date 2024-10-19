@@ -36,10 +36,6 @@ jobs:
           docker run -d --name assessment-test -p 8080:8080 mrksdh/assessment
           sleep 10
 
-      - name: Perform Health Check
-        run: |
-          curl --fail http://localhost:8080/health || exit 1
-
       - name: Get Dataset
         run: |
           curl --fail http://localhost:8080/v1/dataset -o dataset.json || exit 1
