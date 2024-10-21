@@ -10,7 +10,9 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 
 /**
- *
+ * The main controller class for processing customer events and sending results.
+ * This class retrieves a dataset of events, processes them to calculate customer
+ * consumption, and sends the results back to a specified URL.
  */
 public class CustomerController {
     public static void main(String[] args) {
@@ -41,6 +43,12 @@ public class CustomerController {
         sendResult(newResult);
     }
 
+    /**
+     * Retrieves a JSON file from the specified URL.
+     *
+     * @return a string representation of the JSON content retrieved from the URL
+     * @throws RuntimeException if an I/O error occurs or if the URI is malformed
+     */
     public static String getJsonFile(){
         try (InputStream inputStream = new URI("http://localhost:8080/v1/dataset").toURL().openStream()) {
             InputStreamReader isr = new InputStreamReader(inputStream);
@@ -56,6 +64,13 @@ public class CustomerController {
         }
     }
 
+    /**
+     * Sends the specified result as a JSON string to the designated URL.
+     *
+     * @param result the JSON string representing the result to be sent
+     * @throws RuntimeException if an I/O error occurs, the request is interrupted,
+     *                          or the server response status is not OK (200)
+     */
     public static void sendResult(String result) {
         HttpRequest request = null;
         try (HttpClient client = HttpClient.newHttpClient()){
@@ -65,12 +80,15 @@ public class CustomerController {
                     .POST(HttpRequest.BodyPublishers.ofString(result))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
             if (response.statusCode() != HttpURLConnection.HTTP_OK) {
                 throw new RuntimeException(response.body());
             }
+
+            System.out.printf(response.body());
+
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-
     }
 }

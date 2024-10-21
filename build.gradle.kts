@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "org.example"
@@ -17,4 +18,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+
+tasks.shadowJar {
+    archiveBaseName.set("app")              // Set JAR's base name
+    archiveClassifier.set("")               // Set no classifier to replace the default JAR
+    archiveVersion.set(version.toString())  // Include version in JAR name
+    manifest {
+        attributes["Main-Class"] = "org.example.CustomerController" // Main class
+    }
 }
