@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  assessment:
+    image: mrksdh/assessment
+    container_name: assessment
+    ports:
+      - "8080:8080"
+    networks:
+      - my_networks
+
+  java-app:
+    build: .
+    container_name: java
+    depends_on:
+      - assessment
+    networks:
+      - my_networks
+
+networks:
+  my_networks:
+    driver: bridge

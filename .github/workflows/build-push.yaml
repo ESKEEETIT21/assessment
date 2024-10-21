@@ -2,51 +2,63 @@ name: build-push
 
 on:
   push:
-    branches:
-      - master
   pull_request:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
-  test:
+  run_service_and_test_app:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '21.0.1'
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build with Gradle
-        run: ./gradlew build
+          java-version: '21'
 
       - name: Pull Assessment Docker Image
         run: docker pull mrksdh/assessment
 
+      - name: Install curl
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl
+
+      - name: Create Docker Network
+        run: |
+          docker network create my_network
+
       - name: Start Assessment Docker Container
         run: |
-          docker run -d --name assessment-test -p 8080:8080 mrksdh/assessment
-          sleep 10
+          docker run -d --name assessment --network my_network -p 8080:8080 mrksdh/assessment
+          sleep 15
 
-      - name: Get Dataset
+      - name: Perform Health Check
         run: |
-          curl --fail http://localhost:8080/v1/dataset -o dataset.json || exit 1
+          curl -f http://localhost:8080/health || exit 1
 
-      - name: Calculate Results
+      - name: Grant Execute Permission for Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build gradle with shadowJar
         run: |
-          echo '{
-            "result": [
-              {
-                "customerId": "5bd2d637-c946-45bf-b194-d197da7da5cb",
-                "consumption": 2873559000
-              }
-            ]
-          }' > results.json
+          ./gradlew clean shadowJar
+
+      - name: Run Java App
+        run: |
+          # Capture output from the Java app
+          output=$(java -jar build/libs/*.jar)
+          echo "$output"
+           # Extract the status code from the output
+          status_code=$(echo "$output" | grep -oP '"code":[0-9]*' | cut -d ":" -f 2)
+
+          # Output the status code to the environment
+          echo "status_code=$status_code" >> $GITHUB_ENV
+
+          # Check if the status code is 200
+          if [ "$status_code" != "200" ]; then
+            echo "Status code not found or is not 200, exiting with error."
+            exit 1
+          fi
