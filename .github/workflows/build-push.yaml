@@ -59,13 +59,16 @@ jobs:
           ./gradlew clean shadowJar
 
       # Runs the Java application and checks its output for a status code
+      # Run the Java app and capture its output
+      # Extract the status code
+      # Export the status code as an environment variable
+      # Check if the status code is valid and equals 200
       - name: Run Application
-        run: |      
-          output=$(java -jar build/libs/*.jar)  # Run the Java app and capture its output
-          status_code=$(echo "$output" | awk -F'"code":' '{print $2}' | awk '{print $1}')  # Extract the status code
-          echo "STATUS_CODE=$status_code" >> $GITHUB_ENV - # Export the status code as an environment variable
-
-          - # Check if the status code is valid and equals 200
+        run: |
+          output=$(java -jar build/libs/*.jar) 
+          status_code=$(echo "$output" | awk -F'"code":' '{print $2}' | awk '{print $1}')  
+          echo "STATUS_CODE=$status_code" >> $GITHUB_ENV 
+          
           if [[ -z "$status_code" || "$status_code" -ne 200 ]]; then
             echo "Error: Status code is either missing or not 200. Exiting."
             exit 1
